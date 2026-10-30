@@ -1,6 +1,8 @@
 package com.example.securehandover.features.auth.data.datasource
 
+import com.example.securehandover.BuildConfig
 import com.example.securehandover.features.auth.data.model.AuthDto
+
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -44,7 +46,9 @@ class AuthRemoteDataSource @Inject constructor(
     }
 
     suspend fun signInWhitGoogle() : AuthDto {
-        supabaseClient.auth.signInWith(Google)
+
+        val redirectUrl = BuildConfig.SUPABASE_REDIRECT_URL
+        supabaseClient.auth.signInWith(Google, redirectUrl = redirectUrl)
 
         val user = supabaseClient.auth.currentUserOrNull()
             ?: throw Exception("No se pudo autenticar con Google Auth")
