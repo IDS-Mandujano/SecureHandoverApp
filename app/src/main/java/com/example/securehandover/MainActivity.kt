@@ -16,7 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.securehandover.core.navigation.SecureHandoverNavGraph
 import com.example.securehandover.core.ui.theme.SecureHandoverTheme
+import com.example.securehandover.features.auth.presentation.screens.AuthScreen
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -30,7 +35,7 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    OnboardingScreen(onFinishOnboarding = {})
+                    SecureHandoverNavGraph()
                 }
             }
         }

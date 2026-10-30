@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 import com.example.securehandover.core.components.buttons.AppButton
 import com.example.securehandover.core.ui.theme.ActionGreen
 import com.example.securehandover.core.ui.theme.Background
-import com.example.securehandover.core.ui.theme.Surface
+import com.example.securehandover.core.ui.theme.SurfaceColor
 import com.example.securehandover.core.ui.theme.TextOnboarding
 import com.example.securehandover.core.ui.theme.TrustGreen
 import com.example.securehandover.features.onboarding.presentation.viewmodel.OnboardingViewModel
@@ -111,7 +111,7 @@ fun OnboardingScreen(
                                 Icon(
                                     painter = painterResource(id = page.iconResId),
                                     contentDescription = null,
-                                    tint = Surface,
+                                    tint = SurfaceColor,
                                     modifier = Modifier.size(24.dp)
                                 )
 
@@ -122,7 +122,7 @@ fun OnboardingScreen(
                                         text = page.title,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = Surface
+                                        color = SurfaceColor
                                     )
 
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -175,7 +175,7 @@ fun OnboardingScreen(
                 height = 54.dp,
                 iconPainter = painterResource(id = R.drawable.ic_arrow_rigth),
                 containerColor = ActionGreen,
-                contentColor = Surface
+                contentColor = SurfaceColor
             )
 
             Spacer(modifier = Modifier.height(8.dp))
