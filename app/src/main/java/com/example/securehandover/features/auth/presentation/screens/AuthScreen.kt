@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.securehandover.R
@@ -22,6 +21,7 @@ import com.example.securehandover.core.components.buttons.AppButton
 import com.example.securehandover.core.components.inputs.AppTextField
 import com.example.securehandover.core.components.inputs.TextFieldState
 import com.example.securehandover.core.ui.theme.*
+import com.example.securehandover.features.auth.presentation.components.PasswordValidationIndicator
 import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewModel
 
 @Composable
@@ -39,7 +39,7 @@ fun AuthScreen(
         }
     }
 
-    // Validaciones en tiempo real para los estados de los inputs
+    // Validaciones de estado para los inputs
     val usernameState = when {
         uiState.username.isBlank() -> TextFieldState.NEUTRAL
         uiState.username.length >= 3 -> TextFieldState.TRUST
@@ -52,7 +52,6 @@ fun AuthScreen(
         else -> TextFieldState.ERROR
     }
 
-    // Reglas de seguridad para la contraseña
     val password = uiState.password
     val hasUppercase = password.any { it.isUpperCase() }
     val hasSpecialChar = password.any { !it.isLetterOrDigit() }
@@ -72,157 +71,141 @@ fun AuthScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .verticalScroll(scrollState) // Permite mover toda la pantalla con el teclado
+                .imePadding() // Empuja todo el contenido hacia arriba al abrirse el teclado
+                .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
+            // Títulos superiores
+            Text(
+                text = "01 / ACCESO SEGURO",
+                style = MaterialTheme.typography.labelMedium,
+                color = SecondaryText
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "Tu cuenta. El inicio de un trato seguro.",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryText
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Ingresa con tu correo y contraseña o continúa con Google para iniciar sesión sin generar un código adicional.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = SecondaryText
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Tarjeta del Formulario
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceColor),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Text(
-                    text = "01 / ACCESO SEGURO",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = SecondaryText
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Tu cuenta. El inicio de un trato seguro.",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryText
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Ingresa con tu correo y contraseña o continúa con Google para iniciar sesión sin generar un código adicional.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = SecondaryText
-                )
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceColor),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
+                    Text(
+                        text = "Usuario",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryText
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    AppTextField(
+                        value = uiState.username,
+                        onValueChange = { viewModel.onUsernameChanged(it) },
+                        label = "",
+                        placeholder = "Tu nombre de usuario",
+                        leadingIconPainter = painterResource(R.drawable.ic_user_round),
+                        supportingText = if (usernameState == TextFieldState.ERROR) "Mínimo 3 caracteres." else "Usa el nombre que quieres mostrar en la app.",
+                        state = usernameState
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Correo",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryText
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    AppTextField(
+                        value = uiState.email,
+                        onValueChange = { viewModel.onEmailChanged(it) },
+                        label = "",
+                        placeholder = "correo@ejemplo.com",
+                        leadingIconPainter = painterResource(R.drawable.ic_email),
+                        supportingText = if (emailState == TextFieldState.ERROR) "Ingresa un correo válido." else "Usaremos este correo para enviar tu código de verificación.",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        state = emailState
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Contraseña",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryText
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    AppTextField(
+                        value = uiState.password,
+                        onValueChange = { viewModel.onPasswordChanged(it) },
+                        label = "",
+                        placeholder = "••••••••",
+                        leadingIconPainter = painterResource(R.drawable.ic_lock_keyhole),
+                        supportingText = "Usa tu contraseña para continuar.",
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        state = passwordState
+                    )
+
+                    // Indicadores de validación de contraseña visibles sin que el teclado los oculte
+                    PasswordValidationIndicator(password = password)
+
+                    if (uiState.errorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Usuario",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = PrimaryText
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        AppTextField(
-                            value = uiState.username,
-                            onValueChange = { viewModel.onUsernameChanged(it) },
-                            label = "",
-                            placeholder = "Tu nombre de usuario",
-                            leadingIconPainter = painterResource(R.drawable.ic_user_round),
-                            supportingText = if (usernameState == TextFieldState.ERROR) "Mínimo 3 caracteres." else "Usa el nombre que quieres mostrar en la app.",
-                            state = usernameState
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "Correo",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = PrimaryText
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        AppTextField(
-                            value = uiState.email,
-                            onValueChange = { viewModel.onEmailChanged(it) },
-                            label = "",
-                            placeholder = "correo@ejemplo.com",
-                            leadingIconPainter = painterResource(R.drawable.ic_email),
-                            supportingText = if (emailState == TextFieldState.ERROR) "Ingresa un correo válido." else "Usaremos este correo para enviar tu código de verificación.",
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            state = emailState
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "Contraseña",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = PrimaryText
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        AppTextField(
-                            value = uiState.password,
-                            onValueChange = { viewModel.onPasswordChanged(it) },
-                            label = "",
-                            placeholder = "••••••••",
-                            leadingIconPainter = painterResource(R.drawable.ic_lock_keyhole),
-                            supportingText = "Usa tu contraseña para continuar.",
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            state = passwordState
-                        )
-
-                        if (password.isNotBlank() && !isPasswordValid) {
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Column(modifier = Modifier.padding(start = 4.dp)) {
-                                if (!hasUppercase) {
-                                    Text(text = "• Debe incluir al menos una mayúscula", style = MaterialTheme.typography.bodySmall, color = RiskText)
-                                }
-                                if (!hasNumber) {
-                                    Text(text = "• Debe incluir al menos un número", style = MaterialTheme.typography.bodySmall, color = RiskText)
-                                }
-                                if (!hasSpecialChar) {
-                                    Text(text = "• Debe incluir al menos un carácter especial", style = MaterialTheme.typography.bodySmall, color = RiskText)
-                                }
-                                if (password.length < 6) {
-                                    Text(text = "• Mínimo 6 caracteres", style = MaterialTheme.typography.bodySmall, color = RiskText)
-                                }
-                            }
-                        }
-
-                        if (uiState.errorMessage != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = uiState.errorMessage!!,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = RiskText
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        AppButton(
-                            text = "Iniciar sesión",
-                            onClick = { viewModel.authenticate() },
-                            isLoading = uiState.isLoading,
-                            height = 50.dp,
-                            iconPainter = painterResource(id = R.drawable.ic_arrow_rigth),
-                            containerColor = ActionGreen,
-                            contentColor = SurfaceColor
+                            text = uiState.errorMessage!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = RiskText
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    AppButton(
+                        text = "Iniciar sesión",
+                        onClick = { viewModel.authenticate() },
+                        isLoading = uiState.isLoading,
+                        height = 50.dp,
+                        iconPainter = painterResource(id = R.drawable.ic_arrow_rigth),
+                        containerColor = ActionGreen,
+                        contentColor = SurfaceColor
+                    )
                 }
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Sección Inferior (Divisor "o" y Botón de Google)
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp, bottom = 12.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -244,7 +227,7 @@ fun AuthScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedButton(
                     onClick = { viewModel.signInWithGoogle() },
@@ -275,6 +258,9 @@ fun AuthScreen(
                     }
                 }
             }
+
+            // Espacio extra al final para garantizar que al hacer scroll con el teclado abierto, nada quede pegado al borde inferior
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
