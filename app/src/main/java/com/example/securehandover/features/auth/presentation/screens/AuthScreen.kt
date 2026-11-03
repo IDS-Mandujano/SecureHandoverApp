@@ -15,7 +15,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.securehandover.R
 import com.example.securehandover.core.components.buttons.AppButton
 import com.example.securehandover.core.components.inputs.AppTextField
@@ -26,12 +28,34 @@ import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewM
 
 @Composable
 fun AuthScreen(
-    viewModel: AuthViewModel = hiltViewModel(),
+    viewModel: AuthViewModel,
     onSuccessFulAuth: () -> Unit,
+    onNavigateToVerify: (String) -> Unit,
     onBackClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+
+    // Si el usuario vuelve del navegador sin haber completado el flujo OAuth, reseteamos el estado de carga
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.resetGoogleLoading()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(uiState.requiresVerification) {
+        if (uiState.requiresVerification) {
+            viewModel.onVerificationNavigated()
+            onNavigateToVerify(uiState.email)
+        }
+    }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -71,8 +95,8 @@ fun AuthScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState) // Permite mover toda la pantalla con el teclado
-                .imePadding() // Empuja todo el contenido hacia arriba al abrirse el teclado
+                .verticalScroll(scrollState)
+                .imePadding()
                 .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
             // Títulos superiores
@@ -169,7 +193,7 @@ fun AuthScreen(
                         state = passwordState
                     )
 
-                    // Indicadores de validación de contraseña visibles sin que el teclado los oculte
+                    // Indicadores de validación de contraseña
                     PasswordValidationIndicator(password = password)
 
                     if (uiState.errorMessage != null) {
@@ -187,6 +211,7 @@ fun AuthScreen(
                         text = "Iniciar sesión",
                         onClick = { viewModel.authenticate() },
                         isLoading = uiState.isLoading,
+                        enabled = !uiState.isLoading && !uiState.isGoogleLoading,
                         height = 50.dp,
                         iconPainter = painterResource(id = R.drawable.ic_arrow_rigth),
                         containerColor = ActionGreen,
@@ -231,6 +256,7 @@ fun AuthScreen(
 
                 OutlinedButton(
                     onClick = { viewModel.signInWithGoogle() },
+                    enabled = !uiState.isLoading && !uiState.isGoogleLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
@@ -242,24 +268,38 @@ fun AuthScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_google),
-                            contentDescription = null,
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Continuar con Google",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = PrimaryText
-                        )
+                        if (uiState.isGoogleLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = ActionGreen
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Conectando con Google...",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = PrimaryText
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_google),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Continuar con Google",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = PrimaryText
+                            )
+                        }
                     }
                 }
             }
 
-            // Espacio extra al final para garantizar que al hacer scroll con el teclado abierto, nada quede pegado al borde inferior
             Spacer(modifier = Modifier.height(32.dp))
         }
     }

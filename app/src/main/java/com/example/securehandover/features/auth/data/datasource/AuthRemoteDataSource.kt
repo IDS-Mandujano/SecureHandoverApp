@@ -4,6 +4,7 @@ import com.example.securehandover.BuildConfig
 import com.example.securehandover.features.auth.data.model.AuthDto
 
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -45,13 +46,16 @@ class AuthRemoteDataSource @Inject constructor(
         )
     }
 
-    suspend fun signInWhitGoogle() : AuthDto {
+    suspend fun verifyOtp(emailInput: String, codeInput: String): AuthDto {
 
-        val redirectUrl = BuildConfig.SUPABASE_REDIRECT_URL
-        supabaseClient.auth.signInWith(Google, redirectUrl = redirectUrl)
+        supabaseClient.auth.verifyEmailOtp(
+            type = OtpType.Email.EMAIL,
+            email = emailInput,
+            token = codeInput
+        )
 
         val user = supabaseClient.auth.currentUserOrNull()
-            ?: throw Exception("No se pudo autenticar con Google Auth")
+            ?: throw Exception("No se pudo verificar \n Intenta nuevamente")
 
         return AuthDto(
             id = user.id,
@@ -60,7 +64,21 @@ class AuthRemoteDataSource @Inject constructor(
         )
     }
 
+    suspend fun signInWithGoogle() {
+        val redirectUrl = BuildConfig.SUPABASE_REDIRECT_URL
+        supabaseClient.auth.signInWith(Google, redirectUrl = redirectUrl)
+    }
+
     suspend fun logout() {
         supabaseClient.auth.signOut()
+    }
+
+    suspend fun getCurrentUserOrNull(): AuthDto? {
+        val user = supabaseClient.auth.currentUserOrNull() ?: return null
+        return AuthDto(
+            id = user.id,
+            username = user.userMetadata?.get("username")?.toString(),
+            email = user.email.orEmpty()
+        )
     }
 }

@@ -8,6 +8,8 @@ import dagger.hilt.components.SingletonComponent
 import com.example.securehandover.BuildConfig
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.ExternalAuthAction
+import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -28,7 +30,12 @@ object SupabaseModule {
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
         ) {
-            install(Auth)
+            install(Auth) {
+                scheme = "securehandover"
+                host = "auth"
+                flowType = FlowType.PKCE
+                defaultExternalAuthAction = ExternalAuthAction.CustomTabs()
+            }
             install(Postgrest)
             install(Realtime)
             install(Storage)
