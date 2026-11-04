@@ -11,6 +11,7 @@ import com.example.securehandover.features.auth.presentation.state.AuthUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +30,29 @@ class AuthViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    init {
+        observeSessionStatus()
+    }
+
+    private fun observeSessionStatus() {
+        viewModelScope.launch {
+            supabaseClient.auth.sessionStatus.collect { status ->
+                if (status is SessionStatus.Authenticated) {
+                    val user = supabaseClient.auth.currentUserOrNull()
+                    if (user != null) {
+                        val username = user.userMetadata?.get("username")?.toString()?.replace("\"", "")
+                            ?: user.userMetadata?.get("full_name")?.toString()?.replace("\"", "")
+                            ?: user.userMetadata?.get("name")?.toString()?.replace("\"", "")
+                            ?: user.email?.substringBefore("@")
+                            ?: ""
+                        authLocalDataSource.saveUser(AuthEntity(user.id, username, user.email.orEmpty()))
+                    }
+                    _uiState.update { it.copy(isSuccess = true, isGoogleLoading = false) }
+                }
+            }
+        }
+    }
 
     fun resetAuthState() {
         _uiState.value = AuthUiState()
@@ -64,10 +88,6 @@ class AuthViewModel @Inject constructor(
         _uiState.update { it.copy(requiresVerification = false) }
     }
 
-    fun resetGoogleLoading() {
-        _uiState.update { it.copy(isGoogleLoading = false) }
-    }
-
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
@@ -80,13 +100,9 @@ class AuthViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, isSuccess = false, errorMessage = null) }
 
-            val result = runCatching {
-                loginUseCase(state.email, state.password)
-            }
-
-            result.fold(
+            loginUseCase(state.email, state.password).fold(
                 onSuccess = {
                     val user = supabaseClient.auth.currentUserOrNull()
                     if (user != null) {
@@ -106,7 +122,7 @@ class AuthViewModel @Inject constructor(
                     val rawMsg = error.localizedMessage.orEmpty()
                     val userFriendlyMsg = when {
                         rawMsg.contains("Invalid login credentials", ignoreCase = true) -> {
-                            "Este correo no está registrado o la contraseña es incorrecta. Si es una cuenta nueva, regístrate primero."
+                            "Este correo no está registrado o la contraseña es incorrecta. Si te registraste con Google, inicia sesión con Google."
                         }
                         rawMsg.contains("Email not confirmed", ignoreCase = true) -> {
                             "Tu correo aún no ha sido confirmado. Revisa tu bandeja de entrada o verifica tu cuenta."
@@ -136,11 +152,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val result = runCatching {
-                authRepository.singUp(state.username, state.email, state.password)
-            }
-
-            result.fold(
+            authRepository.singUp(state.username, state.email, state.password).fold(
                 onSuccess = {
                     _uiState.update {
                         it.copy(
@@ -156,7 +168,7 @@ class AuthViewModel @Inject constructor(
                         rawMsg.contains("already registered", ignoreCase = true) ||
                         rawMsg.contains("already exists", ignoreCase = true) ||
                         rawMsg.contains("User already registered", ignoreCase = true) -> {
-                            "Este correo ya está registrado. Inicia sesión con tu contraseña o con Google."
+                            "Este correo ya está registrado. Si usaste Gmail, inicia sesión con Google; el código de verificación solo se envía al registrar una cuenta nueva."
                         }
                         else -> error.localizedMessage ?: "Error al registrar la cuenta"
                     }

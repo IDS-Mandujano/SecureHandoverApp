@@ -6,6 +6,7 @@ import com.example.securehandover.features.auth.data.model.ProfileDto
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
+import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -84,7 +85,12 @@ class AuthRemoteDataSource @Inject constructor(
     }
 
     suspend fun logout() {
-        supabaseClient.auth.signOut()
+        try {
+            supabaseClient.auth.signOut(SignOutScope.LOCAL)
+            supabaseClient.auth.signOut(SignOutScope.GLOBAL)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun getCurrentUserOrNull(): AuthDto? {

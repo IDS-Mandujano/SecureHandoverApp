@@ -93,6 +93,11 @@ fun NavGraphBuilder.authGraph(
                     onNavigateToLogin = {
                         viewModel.clearError()
                         navController.popBackStack()
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Register.route) { inclusive = true }
+                        }
                     }
                 )
             }
