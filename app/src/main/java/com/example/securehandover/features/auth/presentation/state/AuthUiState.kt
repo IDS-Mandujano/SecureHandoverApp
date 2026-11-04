@@ -4,12 +4,10 @@ data class AuthUiState(
     val username: String = "",
     val email: String = "",
     val password: String = "",
-    val phone: String = "",
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val isGoogleLoading: Boolean = false,
     val errorMessage: String? = null,
     val isSuccess: Boolean = false,
-    val requiresVerification: Boolean = false,
-    val requiresProfileCompletion: Boolean = false
+    val requiresVerification: Boolean = false
 )

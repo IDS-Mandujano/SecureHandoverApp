@@ -2,12 +2,14 @@ package com.example.securehandover.features.auth.data.datasource
 
 import com.example.securehandover.BuildConfig
 import com.example.securehandover.features.auth.data.model.AuthDto
+import com.example.securehandover.features.auth.data.model.ProfileDto
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import javax.inject.Inject
@@ -92,5 +94,42 @@ class AuthRemoteDataSource @Inject constructor(
             username = user.userMetadata?.get("username")?.toString()?.replace("\"", ""),
             email = user.email.orEmpty()
         )
+    }
+
+    suspend fun getProfile(userId: String, email: String): ProfileDto? {
+        return try {
+            val list = supabaseClient.postgrest["profiles"]
+                .select {
+                    filter {
+                        eq("id", userId)
+                    }
+                }.decodeList<ProfileDto>()
+            list.firstOrNull() ?: run {
+                val emailList = supabaseClient.postgrest["profiles"]
+                    .select {
+                        filter {
+                            eq("email", email)
+                        }
+                    }.decodeList<ProfileDto>()
+                emailList.firstOrNull()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun upsertProfile(userId: String, email: String, username: String, phone: String) {
+        try {
+            val payload = buildJsonObject {
+                put("id", userId)
+                put("email", email)
+                put("username", username)
+                put("phone", phone)
+                put("profile_completed", true)
+            }
+            supabaseClient.postgrest["profiles"].upsert(payload)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

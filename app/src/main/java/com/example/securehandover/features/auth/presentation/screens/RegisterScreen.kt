@@ -33,9 +33,7 @@ import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewM
 fun RegisterScreen(
     viewModel: AuthViewModel,
     onNavigateToVerify: (String) -> Unit,
-    onNavigateToLogin: () -> Unit,
-    onNavigateToCompleteProfile: () -> Unit,
-    onNavigateToHome: () -> Unit
+    onNavigateToLogin: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
@@ -53,19 +51,14 @@ fun RegisterScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.resetAuthState()
+    }
+
     LaunchedEffect(uiState.requiresVerification) {
         if (uiState.requiresVerification) {
             viewModel.onVerificationNavigated()
             onNavigateToVerify(uiState.email)
-        }
-    }
-
-    LaunchedEffect(uiState.isSuccess, uiState.requiresProfileCompletion) {
-        if (uiState.requiresProfileCompletion) {
-            viewModel.onProfileCompletionNavigated()
-            onNavigateToCompleteProfile()
-        } else if (uiState.isSuccess) {
-            onNavigateToHome()
         }
     }
 

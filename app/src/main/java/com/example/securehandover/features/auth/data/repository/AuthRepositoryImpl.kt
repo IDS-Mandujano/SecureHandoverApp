@@ -59,6 +59,7 @@ class AuthRepositoryImpl @Inject constructor(
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
+
         }
     }
 

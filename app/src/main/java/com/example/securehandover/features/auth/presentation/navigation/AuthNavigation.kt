@@ -5,8 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -22,7 +22,6 @@ import com.example.securehandover.core.components.scaffold.AppScaffold
 import com.example.securehandover.core.navigation.Screen
 import com.example.securehandover.core.ui.theme.PrimaryText
 import com.example.securehandover.core.ui.theme.SecondaryText
-import com.example.securehandover.features.auth.presentation.screens.CompleteProfileScreen
 import com.example.securehandover.features.auth.presentation.screens.LoginScreen
 import com.example.securehandover.features.auth.presentation.screens.RegisterScreen
 import com.example.securehandover.features.auth.presentation.screens.VerifyOtpScreen
@@ -30,7 +29,6 @@ import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewM
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.launch
 
 fun NavGraphBuilder.onboardingGraph(navController: NavController){
     composable(route = Screen.Onboarding.route){
@@ -70,11 +68,6 @@ fun NavGraphBuilder.authGraph(
                     },
                     onNavigateToRegister = {
                         navController.navigate(Screen.Register.route)
-                    },
-                    onNavigateToCompleteProfile = {
-                        navController.navigate(Screen.CompleteProfile.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                        }
                     }
                 )
             }
@@ -100,35 +93,6 @@ fun NavGraphBuilder.authGraph(
                     onNavigateToLogin = {
                         viewModel.clearError()
                         navController.popBackStack()
-                    },
-                    onNavigateToCompleteProfile = {
-                        navController.navigate(Screen.CompleteProfile.route) {
-                            popUpTo(Screen.Register.route) { inclusive = true }
-                        }
-                    },
-                    onNavigateToHome = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Register.route) { inclusive = true }
-                        }
-                    }
-                )
-            }
-        }
-    }
-
-    composable(route = Screen.CompleteProfile.route) {
-        val viewModel: AuthViewModel = hiltViewModel()
-
-        AppScaffold(
-            showBackButton = false
-        ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                CompleteProfileScreen(
-                    viewModel = viewModel,
-                    onProfileCompleted = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.CompleteProfile.route) { inclusive = true }
-                        }
                     }
                 )
             }
@@ -150,13 +114,8 @@ fun NavGraphBuilder.authGraph(
         }
         val uiState by viewModel.uiState.collectAsState()
 
-        LaunchedEffect(uiState.isSuccess, uiState.requiresProfileCompletion) {
-            if (uiState.requiresProfileCompletion) {
-                viewModel.onProfileCompletionNavigated()
-                navController.navigate(Screen.CompleteProfile.route) {
-                    popUpTo(Screen.Register.route) { inclusive = true }
-                }
-            } else if (uiState.isSuccess) {
+        LaunchedEffect(uiState.isSuccess) {
+            if (uiState.isSuccess) {
                 navController.navigate(Screen.Home.route) {
                     popUpTo(Screen.Register.route) { inclusive = true }
                 }
@@ -192,17 +151,12 @@ fun NavGraphBuilder.authGraph(
     }
 
     composable(route = Screen.Home.route) {
-        val coroutineScope = rememberCoroutineScope()
+        val viewModel: AuthViewModel = hiltViewModel()
         val user = remember { supabaseClient.auth.currentUserOrNull() }
 
-        val metadata = user?.userMetadata
-        val displayName = metadata?.get("full_name")?.toString()?.replace("\"", "")
-            ?: metadata?.get("name")?.toString()?.replace("\"", "")
-            ?: metadata?.get("username")?.toString()?.replace("\"", "")
-            ?: user?.email?.substringBefore("@")
-            ?: "Usuario"
-
-        val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
+        val displayName by produceState(initialValue = "Usuario") {
+            value = viewModel.getDisplayName()
+        }
 
         AppScaffold(
             showBackButton = false
@@ -230,23 +184,10 @@ fun NavGraphBuilder.authGraph(
                         fontSize = 14.sp,
                         color = SecondaryText
                     )
-                    if (phone.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Tel: $phone",
-                            fontSize = 13.sp,
-                            color = SecondaryText
-                        )
-                    }
                     Spacer(modifier = Modifier.height(24.dp))
                     OutlinedButton(
                         onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    supabaseClient.auth.signOut()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                            viewModel.logout {
                                 navController.navigate(Screen.Login.route) {
                                     popUpTo(Screen.Home.route) { inclusive = true }
                                 }

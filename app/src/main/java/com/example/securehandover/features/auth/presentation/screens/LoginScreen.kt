@@ -33,8 +33,7 @@ import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewM
 fun LoginScreen(
     viewModel: AuthViewModel,
     onNavigateToHome: () -> Unit,
-    onNavigateToRegister: () -> Unit,
-    onNavigateToCompleteProfile: () -> Unit
+    onNavigateToRegister: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
@@ -52,11 +51,12 @@ fun LoginScreen(
         }
     }
 
-    LaunchedEffect(uiState.isSuccess, uiState.requiresProfileCompletion) {
-        if (uiState.requiresProfileCompletion) {
-            viewModel.onProfileCompletionNavigated()
-            onNavigateToCompleteProfile()
-        } else if (uiState.isSuccess) {
+    LaunchedEffect(Unit) {
+        viewModel.resetAuthState()
+    }
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
             onNavigateToHome()
         }
     }

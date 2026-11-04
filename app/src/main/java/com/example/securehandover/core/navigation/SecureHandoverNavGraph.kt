@@ -21,32 +21,44 @@ fun SecureHandoverNavGraph(
     navController: NavHostController = rememberNavController(),
     supabaseClient: SupabaseClient
 ) {
-    var startRouteState by remember { mutableStateOf<String?>(null) }
+    val sessionStatus by supabaseClient.auth.sessionStatus.collectAsState()
+    var isInitialized by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        supabaseClient.auth.sessionStatus.collect { status ->
-            if (startRouteState == null) {
-                startRouteState = when (status) {
-                    is SessionStatus.Authenticated -> {
-                        val user = supabaseClient.auth.currentUserOrNull()
-                        val metadata = user?.userMetadata
-                        val username = metadata?.get("username")?.toString()?.replace("\"", "").orEmpty()
-                        val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
+    val startRoute = remember {
+        when (sessionStatus) {
+            is SessionStatus.Authenticated -> Screen.Home.route
+            else -> Screen.Onboarding.route
+        }
+    }
 
-                        if (username.isBlank() || phone.isBlank()) {
-                            Screen.CompleteProfile.route
-                        } else {
-                            Screen.Home.route
+    LaunchedEffect(sessionStatus) {
+        if (!isInitialized) {
+            if (sessionStatus !is SessionStatus.Initializing) {
+                isInitialized = true
+            }
+        } else {
+            val currentRoute = navController.currentDestination?.route
+            when (sessionStatus) {
+                is SessionStatus.Authenticated -> {
+                    if (currentRoute != Screen.Home.route) {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(0) { inclusive = true }
                         }
                     }
-                    is SessionStatus.NotAuthenticated -> Screen.Onboarding.route
-                    else -> null
                 }
+                is SessionStatus.NotAuthenticated -> {
+                    if (currentRoute == Screen.Home.route) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+                else -> {}
             }
         }
     }
 
-    if (startRouteState == null) {
+    if (!isInitialized) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -58,7 +70,7 @@ fun SecureHandoverNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = startRouteState!!
+        startDestination = startRoute
     ) {
         onboardingGraph(navController)
         authGraph(
