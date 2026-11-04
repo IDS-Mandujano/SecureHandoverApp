@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,11 +39,28 @@ class AuthViewModel @Inject constructor(
             supabaseClient.auth.sessionStatus.collect { status ->
                 when (status) {
                     is SessionStatus.Authenticated -> {
+                        val user = supabaseClient.auth.currentUserOrNull()
+                        val metadata = user?.userMetadata
+                        val username = metadata?.get("username")?.toString()?.replace("\"", "").orEmpty()
+                        val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
+
+                        val needsProfile = username.isBlank() || phone.isBlank()
+
+                        val initialUsername = username.ifBlank {
+                            metadata?.get("full_name")?.toString()?.replace("\"", "")
+                                ?: metadata?.get("name")?.toString()?.replace("\"", "")
+                                ?: user?.email?.substringBefore("@").orEmpty()
+                        }
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 isGoogleLoading = false,
-                                isSuccess = true,
+                                isSuccess = !needsProfile,
+                                requiresProfileCompletion = needsProfile,
+                                username = if (it.username.isBlank()) initialUsername else it.username,
+                                email = user?.email ?: it.email,
+                                phone = if (it.phone.isBlank()) phone else it.phone,
                                 errorMessage = null
                             )
                         }
@@ -51,7 +70,8 @@ class AuthViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false,
                                 isGoogleLoading = false,
-                                isSuccess = false
+                                isSuccess = false,
+                                requiresProfileCompletion = false
                             )
                         }
                     }
@@ -59,6 +79,10 @@ class AuthViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun togglePasswordVisibility() {
+        _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
     }
 
     fun onUsernameChanged(value: String) {
@@ -71,6 +95,10 @@ class AuthViewModel @Inject constructor(
 
     fun onPasswordChanged(value: String) {
         _uiState.update { it.copy(password = value) }
+    }
+
+    fun onPhoneChanged(value: String) {
+        _uiState.update { it.copy(phone = value) }
     }
 
     fun resetVerificationState() {
@@ -87,14 +115,22 @@ class AuthViewModel @Inject constructor(
         _uiState.update { it.copy(requiresVerification = false) }
     }
 
+    fun onProfileCompletionNavigated() {
+        _uiState.update { it.copy(requiresProfileCompletion = false) }
+    }
+
     fun resetGoogleLoading() {
         _uiState.update { it.copy(isGoogleLoading = false) }
     }
 
-    fun authenticate() {
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun login() {
         val state = _uiState.value
         if (state.email.isBlank() || state.password.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Por favor completa los campos obligatorios") }
+            _uiState.update { it.copy(errorMessage = "Por favor completa el correo y la contraseña") }
             return
         }
 
@@ -102,38 +138,89 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             val result = runCatching {
-                if (state.username.isNotBlank()) {
-                    authRepository.singUp(state.username, state.email, state.password)
-                } else {
-                    loginUseCase(state.email, state.password)
-                }
+                loginUseCase(state.email, state.password)
             }
 
             result.fold(
                 onSuccess = {
-                    if (state.username.isNotBlank()) {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                requiresVerification = true,
-                                isSuccess = false
-                            )
-                        }
-                    } else {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                requiresVerification = false,
-                                isSuccess = true
-                            )
-                        }
-                    }
-                },
-                onFailure = { error ->
+                    val user = supabaseClient.auth.currentUserOrNull()
+                    val metadata = user?.userMetadata
+                    val username = metadata?.get("username")?.toString()?.replace("\"", "").orEmpty()
+                    val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
+                    val needsProfile = username.isBlank() || phone.isBlank()
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.localizedMessage ?: "Ocurrió un error"
+                            requiresVerification = false,
+                            requiresProfileCompletion = needsProfile,
+                            isSuccess = !needsProfile
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    val rawMsg = error.localizedMessage.orEmpty()
+                    val userFriendlyMsg = when {
+                        rawMsg.contains("Invalid login credentials", ignoreCase = true) -> {
+                            "Credenciales inválidas. Verifica tu correo y contraseña o regístrate si aún no tienes cuenta."
+                        }
+                        rawMsg.contains("Email not confirmed", ignoreCase = true) -> {
+                            "Tu correo aún no ha sido confirmado. Revisa tu bandeja de entrada o completa la verificación."
+                        }
+                        else -> error.localizedMessage ?: "Ocurrió un error al iniciar sesión"
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = userFriendlyMsg
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun register() {
+        val state = _uiState.value
+
+        if (state.username.isBlank() || state.email.isBlank() || state.password.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Por favor completa todos los campos para registrarte") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val result = runCatching {
+                authRepository.singUp(state.username, state.email, state.password)
+            }
+
+            result.fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            requiresVerification = true,
+                            isSuccess = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    val rawMsg = error.localizedMessage.orEmpty()
+                    val userFriendlyMsg = when {
+                        rawMsg.contains("already registered", ignoreCase = true) ||
+                        rawMsg.contains("already exists", ignoreCase = true) ||
+                        rawMsg.contains("User already registered", ignoreCase = true) -> {
+                            "Este correo ya está registrado. Inicia sesión con tu contraseña o con Google."
+                        }
+                        else -> error.localizedMessage ?: "Error al registrar la cuenta"
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = userFriendlyMsg
                         )
                     }
                 }
@@ -154,7 +241,19 @@ class AuthViewModel @Inject constructor(
 
             verifyOtpUseCase(email, otpCode)
                 .onSuccess {
-                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                    val user = supabaseClient.auth.currentUserOrNull()
+                    val metadata = user?.userMetadata
+                    val username = metadata?.get("username")?.toString()?.replace("\"", "").orEmpty()
+                    val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
+                    val needsProfile = username.isBlank() || phone.isBlank()
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            requiresProfileCompletion = needsProfile,
+                            isSuccess = !needsProfile
+                        )
+                    }
                 }
                 .onFailure { error ->
                     _uiState.update {
@@ -167,6 +266,42 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun completeProfile(onSuccess: () -> Unit) {
+        val state = _uiState.value
+        if (state.username.isBlank() || state.phone.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Por favor ingresa tu nombre de usuario y teléfono") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                supabaseClient.auth.updateUser {
+                    data = buildJsonObject {
+                        put("username", state.username)
+                        put("phone", state.phone)
+                        put("profile_completed", true)
+                    }
+                }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        requiresProfileCompletion = false,
+                        isSuccess = true
+                    )
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.localizedMessage ?: "No se pudieron guardar tus datos"
+                    )
+                }
+            }
+        }
+    }
+
     fun signInWithGoogle() {
         viewModelScope.launch {
             _uiState.update { it.copy(isGoogleLoading = true, errorMessage = null) }
@@ -174,9 +309,7 @@ class AuthViewModel @Inject constructor(
             val result = authRepository.signInWithGoogle()
 
             result.fold(
-                onSuccess = {
-                    // Custom Tab abierto, se esperará a que el deeplink entregue la sesión autenticada
-                },
+                onSuccess = {},
                 onFailure = { error ->
                     _uiState.update {
                         it.copy(

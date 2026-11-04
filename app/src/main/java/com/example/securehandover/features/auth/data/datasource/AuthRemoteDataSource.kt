@@ -8,6 +8,8 @@ import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 
 class AuthRemoteDataSource @Inject constructor(
@@ -24,20 +26,30 @@ class AuthRemoteDataSource @Inject constructor(
 
         return AuthDto(
             id = user.id,
-            username = user.userMetadata?.get("username")?.toString(),
+            username = user.userMetadata?.get("username")?.toString()?.replace("\"", ""),
             email = user.email.orEmpty()
         )
     }
 
     suspend fun signUp(usernameInput: String, emailInput: String, passwordInput: String) : AuthDto {
-
-        supabaseClient.auth.signUpWith(Email){
-            email = emailInput
-            password = passwordInput
+        val metadata = buildJsonObject {
+            put("username", usernameInput)
         }
 
-        val user = supabaseClient.auth.currentUserOrNull()
-            ?: throw Exception("No se pudo otener al usuario despues de registro")
+        val userInfo = supabaseClient.auth.signUpWith(Email) {
+            email = emailInput
+            password = passwordInput
+            data = metadata
+        }
+
+        // Si el usuario ya existe y su correo está confirmado, identities suele estar vacío o confirmado
+        val identities = userInfo?.identities
+        if (identities != null && identities.isEmpty()) {
+            throw Exception("El correo ya está registrado. Por favor inicia sesión con tu contraseña o con Google.")
+        }
+
+        val user = supabaseClient.auth.currentUserOrNull() ?: userInfo
+            ?: throw Exception("No se pudo obtener el usuario después de registro")
 
         return AuthDto (
             id = user.id,
@@ -59,7 +71,7 @@ class AuthRemoteDataSource @Inject constructor(
 
         return AuthDto(
             id = user.id,
-            username = user.userMetadata?.get("username")?.toString(),
+            username = user.userMetadata?.get("username")?.toString()?.replace("\"", ""),
             email = user.email.orEmpty()
         )
     }
@@ -77,7 +89,7 @@ class AuthRemoteDataSource @Inject constructor(
         val user = supabaseClient.auth.currentUserOrNull() ?: return null
         return AuthDto(
             id = user.id,
-            username = user.userMetadata?.get("username")?.toString(),
+            username = user.userMetadata?.get("username")?.toString()?.replace("\"", ""),
             email = user.email.orEmpty()
         )
     }

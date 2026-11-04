@@ -1,6 +1,7 @@
 package com.example.securehandover.features.auth.presentation.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -23,20 +27,18 @@ import com.example.securehandover.core.components.buttons.AppButton
 import com.example.securehandover.core.components.inputs.AppTextField
 import com.example.securehandover.core.components.inputs.TextFieldState
 import com.example.securehandover.core.ui.theme.*
-import com.example.securehandover.features.auth.presentation.components.PasswordValidationIndicator
 import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewModel
 
 @Composable
-fun AuthScreen(
+fun LoginScreen(
     viewModel: AuthViewModel,
-    onSuccessFulAuth: () -> Unit,
-    onNavigateToVerify: (String) -> Unit,
-    onBackClick: () -> Unit = {}
+    onNavigateToHome: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onNavigateToCompleteProfile: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
-    // Si el usuario vuelve del navegador sin haber completado el flujo OAuth, reseteamos el estado de carga
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -50,41 +52,18 @@ fun AuthScreen(
         }
     }
 
-    LaunchedEffect(uiState.requiresVerification) {
-        if (uiState.requiresVerification) {
-            viewModel.onVerificationNavigated()
-            onNavigateToVerify(uiState.email)
+    LaunchedEffect(uiState.isSuccess, uiState.requiresProfileCompletion) {
+        if (uiState.requiresProfileCompletion) {
+            viewModel.onProfileCompletionNavigated()
+            onNavigateToCompleteProfile()
+        } else if (uiState.isSuccess) {
+            onNavigateToHome()
         }
-    }
-
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            onSuccessFulAuth()
-        }
-    }
-
-    // Validaciones de estado para los inputs
-    val usernameState = when {
-        uiState.username.isBlank() -> TextFieldState.NEUTRAL
-        uiState.username.length >= 3 -> TextFieldState.TRUST
-        else -> TextFieldState.ERROR
     }
 
     val emailState = when {
         uiState.email.isBlank() -> TextFieldState.NEUTRAL
         uiState.email.contains("@") && uiState.email.contains(".") -> TextFieldState.TRUST
-        else -> TextFieldState.ERROR
-    }
-
-    val password = uiState.password
-    val hasUppercase = password.any { it.isUpperCase() }
-    val hasSpecialChar = password.any { !it.isLetterOrDigit() }
-    val hasNumber = password.any { it.isDigit() }
-    val isPasswordValid = hasUppercase && hasSpecialChar && hasNumber && password.length >= 6
-
-    val passwordState = when {
-        password.isBlank() -> TextFieldState.NEUTRAL
-        isPasswordValid -> TextFieldState.TRUST
         else -> TextFieldState.ERROR
     }
 
@@ -99,7 +78,6 @@ fun AuthScreen(
                 .imePadding()
                 .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
-            // Títulos superiores
             Text(
                 text = "01 / ACCESO SEGURO",
                 style = MaterialTheme.typography.labelMedium,
@@ -116,14 +94,13 @@ fun AuthScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Ingresa con tu correo y contraseña o continúa con Google para iniciar sesión sin generar un código adicional.",
+                text = "Ingresa con tu correo y contraseña o continúa con Google para acceder directamente.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = SecondaryText
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Tarjeta del Formulario
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -135,25 +112,6 @@ fun AuthScreen(
                         .fillMaxWidth()
                         .padding(20.dp)
                 ) {
-                    Text(
-                        text = "Usuario",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryText
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    AppTextField(
-                        value = uiState.username,
-                        onValueChange = { viewModel.onUsernameChanged(it) },
-                        label = "",
-                        placeholder = "Tu nombre de usuario",
-                        leadingIconPainter = painterResource(R.drawable.ic_user_round),
-                        supportingText = if (usernameState == TextFieldState.ERROR) "Mínimo 3 caracteres." else "Usa el nombre que quieres mostrar en la app.",
-                        state = usernameState
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
                         text = "Correo",
                         style = MaterialTheme.typography.labelMedium,
@@ -167,12 +125,12 @@ fun AuthScreen(
                         label = "",
                         placeholder = "correo@ejemplo.com",
                         leadingIconPainter = painterResource(R.drawable.ic_email),
-                        supportingText = if (emailState == TextFieldState.ERROR) "Ingresa un correo válido." else "Usaremos este correo para enviar tu código de verificación.",
+                        supportingText = if (emailState == TextFieldState.ERROR) "Ingresa un correo válido." else "Usa el correo con el que te registraste.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         state = emailState
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
                         text = "Contraseña",
@@ -187,17 +145,18 @@ fun AuthScreen(
                         label = "",
                         placeholder = "••••••••",
                         leadingIconPainter = painterResource(R.drawable.ic_lock_keyhole),
-                        supportingText = "Usa tu contraseña para continuar.",
+                        trailingIconPainter = painterResource(
+                            if (uiState.isPasswordVisible) R.drawable.ic_eye_off else R.drawable.ic_eye
+                        ),
+                        onTrailingIconClick = { viewModel.togglePasswordVisibility() },
+                        visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        supportingText = "Tu contraseña de acceso.",
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        state = passwordState
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                     )
 
-                    // Indicadores de validación de contraseña
-                    PasswordValidationIndicator(password = password)
-
                     if (uiState.errorMessage != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = uiState.errorMessage!!,
                             style = MaterialTheme.typography.bodySmall,
@@ -205,11 +164,11 @@ fun AuthScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(22.dp))
 
                     AppButton(
                         text = "Iniciar sesión",
-                        onClick = { viewModel.authenticate() },
+                        onClick = { viewModel.login() },
                         isLoading = uiState.isLoading,
                         enabled = !uiState.isLoading && !uiState.isGoogleLoading,
                         height = 50.dp,
@@ -222,7 +181,6 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Sección Inferior (Divisor "o" y Botón de Google)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -297,6 +255,29 @@ fun AuthScreen(
                             )
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "¿No tienes cuenta? ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SecondaryText
+                    )
+                    Text(
+                        text = "Regístrate aquí",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = ActionGreen,
+                        modifier = Modifier.clickable {
+                            viewModel.clearError()
+                            onNavigateToRegister()
+                        }
+                    )
                 }
             }
 

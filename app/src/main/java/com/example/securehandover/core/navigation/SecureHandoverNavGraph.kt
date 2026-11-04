@@ -27,7 +27,18 @@ fun SecureHandoverNavGraph(
         supabaseClient.auth.sessionStatus.collect { status ->
             if (startRouteState == null) {
                 startRouteState = when (status) {
-                    is SessionStatus.Authenticated -> Screen.Home.route
+                    is SessionStatus.Authenticated -> {
+                        val user = supabaseClient.auth.currentUserOrNull()
+                        val metadata = user?.userMetadata
+                        val username = metadata?.get("username")?.toString()?.replace("\"", "").orEmpty()
+                        val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
+
+                        if (username.isBlank() || phone.isBlank()) {
+                            Screen.CompleteProfile.route
+                        } else {
+                            Screen.Home.route
+                        }
+                    }
                     is SessionStatus.NotAuthenticated -> Screen.Onboarding.route
                     else -> null
                 }

@@ -1,5 +1,6 @@
 package com.example.securehandover.core.components.inputs
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.securehandover.core.ui.theme.ActionGreen
 import com.example.securehandover.core.ui.theme.BorderColor
@@ -36,6 +38,8 @@ fun AppTextField(
     modifier: Modifier = Modifier,
     leadingIconPainter: Painter? = null,
     trailingIconPainter: Painter? = null,
+    onTrailingIconClick: (() -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     state: TextFieldState = TextFieldState.NEUTRAL,
     supportingText: String? = null,
     singleLine: Boolean = true,
@@ -57,6 +61,7 @@ fun AppTextField(
         singleLine = singleLine,
         label = if (label.isNotBlank()) { { Text(label) } } else null,
         placeholder = { Text(placeholder, color = SecondaryText) },
+        visualTransformation = visualTransformation,
 
         textStyle = TextStyle(
             color = PrimaryText,
@@ -78,7 +83,10 @@ fun AppTextField(
                 Icon(
                     painter = trailingIconPainter,
                     contentDescription = null,
-                    tint = SecondaryText
+                    tint = SecondaryText,
+                    modifier = if (onTrailingIconClick != null) {
+                        Modifier.clickable { onTrailingIconClick() }
+                    } else Modifier
                 )
             }
         },

@@ -22,7 +22,9 @@ import com.example.securehandover.core.components.scaffold.AppScaffold
 import com.example.securehandover.core.navigation.Screen
 import com.example.securehandover.core.ui.theme.PrimaryText
 import com.example.securehandover.core.ui.theme.SecondaryText
-import com.example.securehandover.features.auth.presentation.screens.AuthScreen
+import com.example.securehandover.features.auth.presentation.screens.CompleteProfileScreen
+import com.example.securehandover.features.auth.presentation.screens.LoginScreen
+import com.example.securehandover.features.auth.presentation.screens.RegisterScreen
 import com.example.securehandover.features.auth.presentation.screens.VerifyOtpScreen
 import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewModel
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
@@ -38,7 +40,9 @@ fun NavGraphBuilder.onboardingGraph(navController: NavController){
             Box(modifier = Modifier.padding(innerPadding)){
                 OnboardingScreen(
                     onFinishOnboarding = {
-                        navController.navigate(Screen.Auth.route)
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
                     }
                 )
             }
@@ -50,36 +54,80 @@ fun NavGraphBuilder.authGraph(
     navController: NavController,
     supabaseClient: SupabaseClient
 ){
+    composable(route = Screen.Login.route){
+        val viewModel: AuthViewModel = hiltViewModel()
 
-    composable(route = Screen.Auth.route){
+        AppScaffold(
+            showBackButton = false
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)){
+                LoginScreen(
+                    viewModel = viewModel,
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(Screen.Register.route)
+                    },
+                    onNavigateToCompleteProfile = {
+                        navController.navigate(Screen.CompleteProfile.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    composable(route = Screen.Register.route){
         val viewModel: AuthViewModel = hiltViewModel()
 
         AppScaffold(
             showBackButton = true,
             onBackClick = {
-                if (!navController.popBackStack()) {
-                    navController.navigate(Screen.Onboarding.route) {
-                        popUpTo(Screen.Auth.route) { inclusive = true }
-                    }
-                }
+                viewModel.clearError()
+                navController.popBackStack()
             }
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)){
-                AuthScreen(
+                RegisterScreen(
                     viewModel = viewModel,
-                    onSuccessFulAuth = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Auth.route) { inclusive = true }
-                        }
-                    },
                     onNavigateToVerify = { email ->
                         navController.navigate(Screen.VerifyOtp.createRoute(email))
                     },
-                    onBackClick = {
-                        if (!navController.popBackStack()) {
-                            navController.navigate(Screen.Onboarding.route) {
-                                popUpTo(Screen.Auth.route) { inclusive = true }
-                            }
+                    onNavigateToLogin = {
+                        viewModel.clearError()
+                        navController.popBackStack()
+                    },
+                    onNavigateToCompleteProfile = {
+                        navController.navigate(Screen.CompleteProfile.route) {
+                            popUpTo(Screen.Register.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Register.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    composable(route = Screen.CompleteProfile.route) {
+        val viewModel: AuthViewModel = hiltViewModel()
+
+        AppScaffold(
+            showBackButton = false
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                CompleteProfileScreen(
+                    viewModel = viewModel,
+                    onProfileCompleted = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.CompleteProfile.route) { inclusive = true }
                         }
                     }
                 )
@@ -93,7 +141,7 @@ fun NavGraphBuilder.authGraph(
     ) { backStackEntry ->
         val email = backStackEntry.arguments?.getString("email") ?: ""
         val parentEntry = remember(backStackEntry) {
-            runCatching { navController.getBackStackEntry(Screen.Auth.route) }.getOrNull()
+            runCatching { navController.getBackStackEntry(Screen.Register.route) }.getOrNull()
         }
         val viewModel: AuthViewModel = if (parentEntry != null) {
             hiltViewModel(parentEntry)
@@ -102,10 +150,15 @@ fun NavGraphBuilder.authGraph(
         }
         val uiState by viewModel.uiState.collectAsState()
 
-        LaunchedEffect(uiState.isSuccess) {
-            if (uiState.isSuccess) {
+        LaunchedEffect(uiState.isSuccess, uiState.requiresProfileCompletion) {
+            if (uiState.requiresProfileCompletion) {
+                viewModel.onProfileCompletionNavigated()
+                navController.navigate(Screen.CompleteProfile.route) {
+                    popUpTo(Screen.Register.route) { inclusive = true }
+                }
+            } else if (uiState.isSuccess) {
                 navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Auth.route) { inclusive = true }
+                    popUpTo(Screen.Register.route) { inclusive = true }
                 }
             }
         }
@@ -127,7 +180,7 @@ fun NavGraphBuilder.authGraph(
                     },
                     onBackToLogin = {
                         viewModel.resetVerificationState()
-                        navController.popBackStack()
+                        navController.popBackStack(Screen.Login.route, false)
                     },
                     onBackClicked = {
                         viewModel.resetVerificationState()
@@ -141,6 +194,15 @@ fun NavGraphBuilder.authGraph(
     composable(route = Screen.Home.route) {
         val coroutineScope = rememberCoroutineScope()
         val user = remember { supabaseClient.auth.currentUserOrNull() }
+
+        val metadata = user?.userMetadata
+        val displayName = metadata?.get("full_name")?.toString()?.replace("\"", "")
+            ?: metadata?.get("name")?.toString()?.replace("\"", "")
+            ?: metadata?.get("username")?.toString()?.replace("\"", "")
+            ?: user?.email?.substringBefore("@")
+            ?: "Usuario"
+
+        val phone = metadata?.get("phone")?.toString()?.replace("\"", "").orEmpty()
 
         AppScaffold(
             showBackButton = false
@@ -157,17 +219,25 @@ fun NavGraphBuilder.authGraph(
                     modifier = Modifier.padding(24.dp)
                 ) {
                     Text(
-                        text = "¡Bienvenido a SecureHandover (Home)!",
-                        fontSize = 18.sp,
+                        text = "¡Hola, $displayName!",
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryText
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = user?.email ?: "Sesión activa",
                         fontSize = 14.sp,
                         color = SecondaryText
                     )
+                    if (phone.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Tel: $phone",
+                            fontSize = 13.sp,
+                            color = SecondaryText
+                        )
+                    }
                     Spacer(modifier = Modifier.height(24.dp))
                     OutlinedButton(
                         onClick = {
@@ -177,7 +247,7 @@ fun NavGraphBuilder.authGraph(
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                 }
-                                navController.navigate(Screen.Auth.route) {
+                                navController.navigate(Screen.Login.route) {
                                     popUpTo(Screen.Home.route) { inclusive = true }
                                 }
                             }
