@@ -157,52 +157,17 @@ fun NavGraphBuilder.authGraph(
 
     composable(route = Screen.Home.route) {
         val viewModel: AuthViewModel = hiltViewModel()
-        val user = remember { supabaseClient.auth.currentUserOrNull() }
 
-        val displayName by produceState(initialValue = "Usuario") {
-            value = viewModel.getDisplayName()
-        }
-
-        AppScaffold(
-            showBackButton = false
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(24.dp)
-                ) {
-                    Text(
-                        text = "¡Hola, $displayName!",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryText
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = user?.email ?: "Sesión activa",
-                        fontSize = 14.sp,
-                        color = SecondaryText
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    OutlinedButton(
-                        onClick = {
-                            viewModel.logout {
-                                navController.navigate(Screen.Login.route) {
-                                    popUpTo(Screen.Home.route) { inclusive = true }
-                                }
-                            }
-                        }
-                    ) {
-                        Text(text = "Cerrar sesión")
-                    }
+        com.example.securehandover.features.home.presentation.screens.HomeScreen(
+            viewModel = viewModel,
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onLogoutClick = {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true }
                 }
             }
-        }
+        )
     }
 }

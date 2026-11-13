@@ -19,6 +19,7 @@ fun AppScaffold(
     title: String = "SecureHandover",
     showBackButton: Boolean = true,
     onBackClick: () -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -56,7 +57,8 @@ fun AppScaffold(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceColor)
             )
-        }
+        },
+        bottomBar = bottomBar
     ) { innerPadding ->
         content(innerPadding)
     }
