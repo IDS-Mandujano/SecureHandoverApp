@@ -32,6 +32,7 @@ android {
 
         buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties.getProperty("SUPABASE_ANON_KEY")}\"")
+        buildConfigField("String", "SUPABASE_REDIRECT_URL", "\"${localProperties.getProperty("SUPABASE_REDIRECT_URL")}\"")
     }
 
     buildTypes {
@@ -69,6 +70,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.datastore.preferences)
 
     //Supabase con BOOM
     implementation(platform(libs.supabase.bom))
