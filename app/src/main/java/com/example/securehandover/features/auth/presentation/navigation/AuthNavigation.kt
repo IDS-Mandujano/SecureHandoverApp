@@ -167,6 +167,20 @@ fun NavGraphBuilder.authGraph(
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Home.route) { inclusive = true }
                 }
+            },
+            onProductClick = { _ ->
+                navController.navigate(Screen.ProductDetail.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProductDetail.route) {
+        com.example.securehandover.features.product.presentation.screens.ProductDetailScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onMakeOfferClick = {
+                // Handle make offer action
             }
         )
     }

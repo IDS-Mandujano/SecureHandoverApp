@@ -32,7 +32,8 @@ import com.example.securehandover.features.home.presentation.components.*
 fun HomeScreen(
     viewModel: AuthViewModel? = null,
     onBackClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    onProductClick: (String) -> Unit = {}
 ) {
     var selectedCategory by remember { mutableStateOf("Todo") }
     var currentNavRoute by remember { mutableStateOf("explorar") }
@@ -130,33 +131,10 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Screen indicator and role badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "01 / MERCADO LOCAL",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = SecondaryText,
-                    letterSpacing = 1.sp
-                )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Resume)
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "Comprador",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = SecondaryText
-                    )
-                }
-            }
+            com.example.securehandover.core.components.headers.ScreenHeaderIndicator(
+                stepTitle = "01 / MERCADO LOCAL",
+                roleText = "Comprador"
+            )
 
             // Headline Title and Subtitle
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -305,6 +283,7 @@ fun HomeScreen(
                         rowProducts.forEach { product ->
                             ProductCard(
                                 product = product,
+                                onClick = { onProductClick(product.id) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
