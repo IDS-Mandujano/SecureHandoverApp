@@ -22,18 +22,18 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AppStatusTag(
-    text : String,
+    text: String,
     modifier: Modifier = Modifier,
     iconPainter: Painter? = null,
-    containerColor : Color = MaterialTheme.colorScheme.primaryContainer,
-    contentColor : Color = MaterialTheme.colorScheme.onPrimaryContainer,
-    borderColor : Color? = null,
-    iconSize : Dp = 14.dp
-    ){
-
+    containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    borderColor: Color? = null,
+    iconSize: Dp = 14.dp,
+    cornerRadius: Dp = 8.dp
+) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(50.dp),
+        shape = RoundedCornerShape(cornerRadius),
         color = containerColor,
         border = borderColor?.let { BorderStroke(1.dp, it) }
     ) {
@@ -41,24 +41,22 @@ fun AppStatusTag(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (iconPainter != null){
+            if (iconPainter != null) {
                 Icon(
                     painter = iconPainter,
                     contentDescription = null,
                     modifier = Modifier.size(iconSize),
                     tint = contentColor
                 )
-
                 Spacer(modifier = Modifier.width(6.dp))
-
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = contentColor
-                )
             }
+
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor
+            )
         }
     }
-
 }

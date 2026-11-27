@@ -17,19 +17,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.securehandover.R
-import com.example.securehandover.core.components.bars.GlobalBottomActionBar
+import com.example.securehandover.core.components.badges.AppStatusTag
+import com.example.securehandover.core.components.buttons.AppButton
 import com.example.securehandover.core.components.headers.ScreenHeaderIndicator
 import com.example.securehandover.core.components.navigation.AppNavigationBar
 import com.example.securehandover.core.components.navigation.BottomNavItem
 import com.example.securehandover.core.components.scaffold.AppScaffold
 import com.example.securehandover.core.ui.theme.*
-import com.example.securehandover.features.home.presentation.components.ProductCard
-import com.example.securehandover.features.home.presentation.components.ProductItem
 
 @Composable
 fun ListingPreviewScreen(
+    title: String = "MacBook Air M2",
+    price: String = "$18,500 MXN",
+    condition: String = "Muy buen estado",
+    locationAndCategory: String = "Roma Norte, CDMX · Tecnología",
+    description: String = "MacBook Air M2 en muy buen estado. Incluye cargador. Puedes revisar su funcionamiento durante la entrega.",
+    sellerName: String = "Diego M. · vendedor",
     onBackClick: () -> Unit = {},
     onPublishClick: () -> Unit = {},
+    onEditClick: () -> Unit = onBackClick,
     onNavigateToRoute: (String) -> Unit = {}
 ) {
     val navItems = listOf(
@@ -55,33 +61,15 @@ fun ListingPreviewScreen(
         )
     )
 
-    val previewProduct = ProductItem(
-        id = "preview_1",
-        title = "Sony α7 IV · cuerpo",
-        price = "$28,000 MXN",
-        condition = "Excelente estado",
-        locationDistance = "Roma Norte, CDMX",
-        isVerified = true,
-        placeholderColor = Color(0xFFE2DDD7)
-    )
-
     AppScaffold(
         showBackButton = true,
         onBackClick = onBackClick,
         bottomBar = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                GlobalBottomActionBar(
-                    infoText = "Tu anuncio estará visible inmediatamente en Mercado Local.",
-                    buttonText = "Publicar anuncio",
-                    onButtonClick = onPublishClick
-                )
-
-                AppNavigationBar(
-                    items = navItems,
-                    currentRoute = "publicar",
-                    onNavigate = onNavigateToRoute
-                )
-            }
+            AppNavigationBar(
+                items = navItems,
+                currentRoute = "publicar",
+                onNavigate = onNavigateToRoute
+            )
         }
     ) { innerPadding ->
         Column(
@@ -94,14 +82,14 @@ fun ListingPreviewScreen(
         ) {
             // Header Indicator
             ScreenHeaderIndicator(
-                stepTitle = "01 / PUBLICAR ANUNCIO",
-                roleText = "Vendedor"
+                stepTitle = "PUBLICAR / VISTA PREVIA",
+                showRoleBadge = false
             )
 
             // Title & Subtitle
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Vista previa de tu anuncio.",
+                    text = "Así se verá tu anuncio.",
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryText,
@@ -109,7 +97,7 @@ fun ListingPreviewScreen(
                 )
 
                 Text(
-                    text = "Revisa los detalles de tu publicación antes de hacerla pública en el mercado local.",
+                    text = "Borrador de ejemplo - todavía no es público.",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal,
                     color = SecondaryText,
@@ -117,16 +105,70 @@ fun ListingPreviewScreen(
                 )
             }
 
-            // Preview Product Card
-            ProductCard(
-                product = previewProduct,
-                modifier = Modifier.fillMaxWidth()
+            // Product Preview Image Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFFE2DDD7)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_camera),
+                    contentDescription = null,
+                    tint = SecondaryText.copy(alpha = 0.4f),
+                    modifier = Modifier.size(56.dp)
+                )
+            }
+
+            // Product Title and Price
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = title,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryText
+                )
+
+                Text(
+                    text = price,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryText
+                )
+            }
+
+            // Condition Tag & Location / Category
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AppStatusTag(
+                    text = condition,
+                    containerColor = Resume,
+                    contentColor = SecondaryText,
+                    cornerRadius = 8.dp
+                )
+
+                Text(
+                    text = locationAndCategory,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = SecondaryText
+                )
+            }
+
+            // Description Text
+            Text(
+                text = description,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                color = SecondaryText,
+                lineHeight = 18.sp
             )
 
-            // Security & Settings Checklist Card
+            // Seller Info Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = SurfaceColor),
                 border = BorderStroke(1.dp, BorderColor),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -134,81 +176,55 @@ fun ListingPreviewScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Garantías y seguridad activadas",
+                        text = sellerName,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryText
                     )
 
-                    listOf(
-                        "Certificación presencial de la entrega",
-                        "Custodia digital de pago habilitada",
-                        "Verificación de ubicación GPS activada",
-                        "Firma de voz e identidad biométrica requeridas"
-                    ).forEach { featureText ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = featureText,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = SecondaryText
-                            )
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_badge_check),
-                                contentDescription = "Activado",
-                                tint = ActionGreen,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                    AppStatusTag(
+                        text = "Identidad verificada",
+                        iconPainter = painterResource(id = R.drawable.ic_badge_check),
+                        containerColor = ExitColor,
+                        contentColor = ActionGreen,
+                        cornerRadius = 8.dp
+                    )
                 }
             }
 
-            // Information Box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(ExitColor)
-                    .padding(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_shield_check),
-                        contentDescription = null,
-                        tint = ActionGreen,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(top = 2.dp)
+            // Action Buttons
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AppButton(
+                    text = "Publicar anuncio",
+                    onClick = onPublishClick,
+                    iconPainter = painterResource(id = R.drawable.ic_arrow_rigth),
+                    containerColor = ActionGreen,
+                    contentColor = SurfaceColor,
+                    cornerRadius = 14.dp,
+                    height = 50.dp
+                )
+
+                OutlinedButton(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, BorderColor),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = SurfaceColor,
+                        contentColor = PrimaryText
                     )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Protección de vendedora",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = ActionGreen
-                        )
-
-                        Text(
-                            text = "Las ofertas de compradores no verificados serán bloqueadas automáticamente hasta que confirmen su identidad.",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = ActionGreen,
-                            lineHeight = 16.sp
-                        )
-                    }
+                ) {
+                    Text(
+                        text = "Volver a editar",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
