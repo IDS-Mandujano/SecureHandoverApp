@@ -112,13 +112,7 @@ fun HomeScreen(
             AppNavigationBar(
                 items = navItems,
                 currentRoute = "explorar",
-                onNavigate = { route ->
-                    if (route == "perfil" && viewModel != null) {
-                        viewModel.logout(onLogoutClick)
-                    } else {
-                        onNavigateToRoute(route)
-                    }
-                }
+                onNavigate = onNavigateToRoute
             )
         }
     ) { innerPadding ->

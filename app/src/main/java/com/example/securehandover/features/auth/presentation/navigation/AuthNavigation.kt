@@ -35,6 +35,7 @@ import com.example.securehandover.features.protocol.presentation.screens.Handove
 import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep2Screen
 import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep3Screen
 import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep4Screen
+import com.example.securehandover.features.profile.presentation.screens.*
 import io.github.jan.supabase.SupabaseClient
 
 fun NavGraphBuilder.onboardingGraph(navController: NavController){
@@ -82,8 +83,9 @@ fun NavGraphBuilder.authGraph(
                 }
             }
             "perfil" -> {
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
+                navController.navigate(Screen.Profile.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                    launchSingleTop = true
                 }
             }
         }
@@ -363,6 +365,126 @@ fun NavGraphBuilder.authGraph(
                     popUpTo(Screen.Home.route) { inclusive = true }
                 }
             }
+        )
+    }
+
+    composable(route = Screen.Profile.route) {
+        val viewModel: AuthViewModel = hiltViewModel()
+
+        ProfileScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onEditProfileClick = {
+                navController.navigate(Screen.EditProfile.route)
+            },
+            onIdentitySecurityClick = {
+                navController.navigate(Screen.IdentitySecurity.route)
+            },
+            onMyListingsClick = {
+                navController.navigate(Screen.MyListings.route)
+            },
+            onDigitalCertificatesClick = {
+                navController.navigate(Screen.DigitalCertificates.route)
+            },
+            onPaymentMethodsClick = {
+                navController.navigate(Screen.PaymentMethods.route)
+            },
+            onPrivacySettingsClick = {
+                navController.navigate(Screen.PrivacySettings.route)
+            },
+            onHelpCenterClick = {
+                navController.navigate(Screen.HelpCenter.route)
+            },
+            onLogoutClick = {
+                viewModel.logout {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.EditProfile.route) {
+        EditProfileScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onSaveChangesClick = { _, _ ->
+                navController.popBackStack()
+            },
+            onCancelClick = {
+                navController.popBackStack()
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.IdentitySecurity.route) {
+        IdentitySecurityScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.MyListings.route) {
+        MyListingsScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onPreviewClick = {
+                navController.navigate(Screen.ListingPreview.route)
+            },
+            onEditDraftClick = {
+                navController.navigate(Screen.CreateListing.route)
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.DigitalCertificates.route) {
+        DigitalCertificatesScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onGoToHandoversClick = {
+                navController.navigate(Screen.HandoversList.route)
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.PaymentMethods.route) {
+        PaymentMethodsScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.PrivacySettings.route) {
+        PrivacySettingsScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onSavePreferencesClick = {
+                navController.popBackStack()
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.HelpCenter.route) {
+        HelpCenterScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
         )
     }
 }
