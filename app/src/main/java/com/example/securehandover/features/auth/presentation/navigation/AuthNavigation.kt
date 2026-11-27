@@ -180,7 +180,18 @@ fun NavGraphBuilder.authGraph(
                 navController.popBackStack()
             },
             onMakeOfferClick = {
-                // Handle make offer action
+                navController.navigate(Screen.IdentityStep1.route)
+            }
+        )
+    }
+
+    composable(route = Screen.IdentityStep1.route) {
+        com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep1Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onScanIneClick = {
+                // Next step in identity flow
             }
         )
     }
