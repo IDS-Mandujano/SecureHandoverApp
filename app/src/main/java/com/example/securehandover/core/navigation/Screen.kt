@@ -20,4 +20,12 @@ sealed class Screen(val route: String) {
     object HandoversList : Screen("handovers_list")
     object CreateListing : Screen("create_listing")
     object ListingPreview : Screen("listing_preview")
+    object Profile : Screen("profile")
+    object EditProfile : Screen("edit_profile")
+    object IdentitySecurity : Screen("identity_security")
+    object MyListings : Screen("my_listings")
+    object DigitalCertificates : Screen("digital_certificates")
+    object PaymentMethods : Screen("payment_methods")
+    object PrivacySettings : Screen("privacy_settings")
+    object HelpCenter : Screen("help_center")
 }
