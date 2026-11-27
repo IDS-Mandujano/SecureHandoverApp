@@ -1,0 +1,326 @@
+package com.example.securehandover.features.protocol.presentation.screens
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.securehandover.R
+import com.example.securehandover.core.components.bars.GlobalBottomActionBar
+import com.example.securehandover.core.components.headers.ScreenHeaderIndicator
+import com.example.securehandover.core.components.scaffold.AppScaffold
+import com.example.securehandover.core.ui.theme.*
+
+@Composable
+fun HandoverProtocolStep4Screen(
+    onBackClick: () -> Unit = {},
+    onFinishHandoverClick: () -> Unit = {},
+    onReportFreezeClick: () -> Unit = {}
+) {
+    var isRecording by remember { mutableStateOf(false) }
+
+    AppScaffold(
+        showBackButton = true,
+        onBackClick = onBackClick,
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(SurfaceColor)
+            ) {
+                GlobalBottomActionBar(
+                    infoText = "Paso final 4 de 4: Declaración de voz para liberar el importe.",
+                    buttonText = "Firmar y finalizar entrega",
+                    onButtonClick = onFinishHandoverClick
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onReportFreezeClick() }
+                        .padding(bottom = 12.dp, top = 2.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_flag),
+                        contentDescription = "Denunciar y congelar",
+                        tint = RiskText,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Denunciar y congelar · adjuntar evidencia",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = RiskText
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Screen Header Indicator
+            ScreenHeaderIndicator(
+                stepTitle = "09 / PROTOCOLO DE EJEMPLO",
+                roleText = "Comprador"
+            )
+
+            // Protocol 4 Steps Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Step 1: GPS (Completed)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(ActionGreen)
+                    )
+                    Text(
+                        text = "01 · GPS ✓",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ActionGreen
+                    )
+                }
+
+                // Step 2: Biometría (Completed)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(ActionGreen)
+                    )
+                    Text(
+                        text = "02 · Biometría ✓",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ActionGreen
+                    )
+                }
+
+                // Step 3: Fotos (Completed)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(ActionGreen)
+                    )
+                    Text(
+                        text = "03 · Fotos ✓",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ActionGreen
+                    )
+                }
+
+                // Step 4: Voz (Active)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(ActionGreen)
+                    )
+                    Text(
+                        text = "04 · Voz",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ActionGreen
+                    )
+                }
+            }
+
+            // Headline Title & Subtitle
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Firma de voz del comprador.",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryText,
+                    lineHeight = 30.sp
+                )
+
+                Text(
+                    text = "Lee la siguiente declaración en voz alta para confirmar la entrega y liberar el pago.",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = SecondaryText,
+                    lineHeight = 18.sp
+                )
+            }
+
+            // Speech Statement Declaration Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Resume),
+                border = BorderStroke(1.dp, BorderColor),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "DECLARACIÓN DE CONFORMIDAD",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ActionGreen,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    Text(
+                        text = "“Acepto la recepción del producto Sony α7 IV en las condiciones acordadas y autorizo la liberación de $28,000 MXN a Elena R.”",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = PrimaryText,
+                        lineHeight = 22.sp
+                    )
+                }
+            }
+
+            // Voice Waveform Recorder Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceColor),
+                border = BorderStroke(1.dp, BorderColor),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Mic Circle Button
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(if (isRecording) Risk else ExitColor)
+                            .clickable { isRecording = !isRecording },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_mic),
+                            contentDescription = "Micrófono",
+                            tint = if (isRecording) RiskText else ActionGreen,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    // Audio Waveform Equalizer Mock Bars
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(12, 24, 18, 32, 20, 28, 14, 22, 30, 16, 26, 12).forEach { heightDp ->
+                            Box(
+                                modifier = Modifier
+                                    .width(4.dp)
+                                    .height(heightDp.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(if (isRecording) ActionGreen else SecondaryText.copy(alpha = 0.4f))
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = if (isRecording) "Grabando firma de voz..." else "Toca el micrófono para grabar la firma de voz",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isRecording) ActionGreen else SecondaryText
+                    )
+                }
+            }
+
+            // Info Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(ExitColor)
+                    .padding(18.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_shield_check),
+                        contentDescription = null,
+                        tint = ActionGreen,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(top = 2.dp)
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Firma biométrica por voz",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ActionGreen
+                        )
+
+                        Text(
+                            text = "El audio grabado se procesa con inteligencia artificial para validar la intención de compra y generar el acta digital.",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = ActionGreen,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}

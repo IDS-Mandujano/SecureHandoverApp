@@ -5,13 +5,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -20,15 +19,20 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.securehandover.core.components.scaffold.AppScaffold
 import com.example.securehandover.core.navigation.Screen
-import com.example.securehandover.core.ui.theme.PrimaryText
-import com.example.securehandover.core.ui.theme.SecondaryText
 import com.example.securehandover.features.auth.presentation.screens.LoginScreen
 import com.example.securehandover.features.auth.presentation.screens.RegisterScreen
 import com.example.securehandover.features.auth.presentation.screens.VerifyOtpScreen
 import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewModel
+import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep1Screen
+import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep2Screen
+import com.example.securehandover.features.offer.presentation.screens.MakeOfferScreen
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverCertificateScreen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolGpsScreen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep2Screen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep3Screen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep4Screen
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
 
 fun NavGraphBuilder.onboardingGraph(navController: NavController){
     composable(route = Screen.Onboarding.route){
@@ -52,6 +56,8 @@ fun NavGraphBuilder.authGraph(
     navController: NavController,
     supabaseClient: SupabaseClient
 ){
+    var isIdentityVerified by mutableStateOf(false)
+
     composable(route = Screen.Login.route){
         val viewModel: AuthViewModel = hiltViewModel()
 
@@ -180,13 +186,17 @@ fun NavGraphBuilder.authGraph(
                 navController.popBackStack()
             },
             onMakeOfferClick = {
-                navController.navigate(Screen.IdentityStep1.route)
+                if (isIdentityVerified) {
+                    navController.navigate(Screen.MakeOffer.route)
+                } else {
+                    navController.navigate(Screen.IdentityStep1.route)
+                }
             }
         )
     }
 
     composable(route = Screen.IdentityStep1.route) {
-        com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep1Screen(
+        IdentityVerificationStep1Screen(
             onBackClick = {
                 navController.popBackStack()
             },
@@ -197,12 +207,83 @@ fun NavGraphBuilder.authGraph(
     }
 
     composable(route = Screen.IdentityStep2.route) {
-        com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep2Screen(
+        IdentityVerificationStep2Screen(
             onBackClick = {
                 navController.popBackStack()
             },
             onStartSelfieClick = {
-                // Action on selfie complete
+                isIdentityVerified = true
+                navController.navigate(Screen.MakeOffer.route) {
+                    popUpTo(Screen.ProductDetail.route) { inclusive = false }
+                }
+            }
+        )
+    }
+
+    composable(route = Screen.MakeOffer.route) {
+        MakeOfferScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onReviewOfferClick = {
+                navController.navigate(Screen.HandoverProtocolGps.route)
+            }
+        )
+    }
+
+    composable(route = Screen.HandoverProtocolGps.route) {
+        HandoverProtocolGpsScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onContinueClick = {
+                navController.navigate(Screen.ProtocolStep2.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep2.route) {
+        HandoverProtocolStep2Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onContinueClick = {
+                navController.navigate(Screen.ProtocolStep3.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep3.route) {
+        HandoverProtocolStep3Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onContinueClick = {
+                navController.navigate(Screen.ProtocolStep4.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep4.route) {
+        HandoverProtocolStep4Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onFinishHandoverClick = {
+                navController.navigate(Screen.ProtocolStep5.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep5.route) {
+        HandoverCertificateScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onReturnHomeClick = {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true }
+                }
             }
         )
     }
