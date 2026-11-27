@@ -17,4 +17,6 @@ sealed class Screen(val route: String) {
     object ProtocolStep3 : Screen("protocol_step_3")
     object ProtocolStep4 : Screen("protocol_step_4")
     object ProtocolStep5 : Screen("protocol_step_5")
+    object HandoversList : Screen("handovers_list")
+    object ListingPreview : Screen("listing_preview")
 }
