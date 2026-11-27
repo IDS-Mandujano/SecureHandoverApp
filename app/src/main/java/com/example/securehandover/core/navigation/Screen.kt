@@ -13,4 +13,8 @@ sealed class Screen(val route: String) {
     object IdentityStep2 : Screen("identity_step_2")
     object MakeOffer : Screen("make_offer")
     object HandoverProtocolGps : Screen("handover_protocol_gps")
+    object ProtocolStep2 : Screen("protocol_step_2")
+    object ProtocolStep3 : Screen("protocol_step_3")
+    object ProtocolStep4 : Screen("protocol_step_4")
+    object ProtocolStep5 : Screen("protocol_step_5")
 }

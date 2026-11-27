@@ -27,6 +27,11 @@ import com.example.securehandover.features.identity.presentation.screens.Identit
 import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep2Screen
 import com.example.securehandover.features.offer.presentation.screens.MakeOfferScreen
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverCertificateScreen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolGpsScreen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep2Screen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep3Screen
+import com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolStep4Screen
 import io.github.jan.supabase.SupabaseClient
 
 fun NavGraphBuilder.onboardingGraph(navController: NavController){
@@ -227,15 +232,58 @@ fun NavGraphBuilder.authGraph(
     }
 
     composable(route = Screen.HandoverProtocolGps.route) {
-        com.example.securehandover.features.protocol.presentation.screens.HandoverProtocolGpsScreen(
+        HandoverProtocolGpsScreen(
             onBackClick = {
                 navController.popBackStack()
             },
             onContinueClick = {
-                // Next step in handover protocol
+                navController.navigate(Screen.ProtocolStep2.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep2.route) {
+        HandoverProtocolStep2Screen(
+            onBackClick = {
+                navController.popBackStack()
             },
-            onReportFreezeClick = {
-                // Report and freeze action
+            onContinueClick = {
+                navController.navigate(Screen.ProtocolStep3.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep3.route) {
+        HandoverProtocolStep3Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onContinueClick = {
+                navController.navigate(Screen.ProtocolStep4.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep4.route) {
+        HandoverProtocolStep4Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onFinishHandoverClick = {
+                navController.navigate(Screen.ProtocolStep5.route)
+            }
+        )
+    }
+
+    composable(route = Screen.ProtocolStep5.route) {
+        HandoverCertificateScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onReturnHomeClick = {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true }
+                }
             }
         )
     }
