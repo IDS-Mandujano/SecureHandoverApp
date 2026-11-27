@@ -33,10 +33,10 @@ fun HomeScreen(
     viewModel: AuthViewModel? = null,
     onBackClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onProductClick: (String) -> Unit = {}
+    onProductClick: (String) -> Unit = {},
+    onNavigateToRoute: (String) -> Unit = {}
 ) {
     var selectedCategory by remember { mutableStateOf("Todo") }
-    var currentNavRoute by remember { mutableStateOf("explorar") }
     val searchQuery by remember { mutableStateOf("") }
 
     val categories = listOf("Todo", "Fotografía", "Tecnología", "Colección")
@@ -111,12 +111,12 @@ fun HomeScreen(
         bottomBar = {
             AppNavigationBar(
                 items = navItems,
-                currentRoute = currentNavRoute,
+                currentRoute = "explorar",
                 onNavigate = { route ->
                     if (route == "perfil" && viewModel != null) {
                         viewModel.logout(onLogoutClick)
                     } else {
-                        currentNavRoute = route
+                        onNavigateToRoute(route)
                     }
                 }
             )

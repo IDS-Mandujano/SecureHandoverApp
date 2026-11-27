@@ -23,8 +23,10 @@ import com.example.securehandover.features.auth.presentation.screens.LoginScreen
 import com.example.securehandover.features.auth.presentation.screens.RegisterScreen
 import com.example.securehandover.features.auth.presentation.screens.VerifyOtpScreen
 import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewModel
+import com.example.securehandover.features.handovers.presentation.screens.HandoversListScreen
 import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep1Screen
 import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep2Screen
+import com.example.securehandover.features.listing.presentation.screens.ListingPreviewScreen
 import com.example.securehandover.features.offer.presentation.screens.MakeOfferScreen
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
 import com.example.securehandover.features.protocol.presentation.screens.HandoverCertificateScreen
@@ -57,6 +59,19 @@ fun NavGraphBuilder.authGraph(
     supabaseClient: SupabaseClient
 ){
     var isIdentityVerified by mutableStateOf(false)
+
+    fun handleBottomNav(targetRoute: String) {
+        when (targetRoute) {
+            "explorar" -> navController.navigate(Screen.Home.route)
+            "traspasos" -> navController.navigate(Screen.HandoversList.route)
+            "publicar" -> navController.navigate(Screen.ListingPreview.route)
+            "perfil" -> {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true }
+                }
+            }
+        }
+    }
 
     composable(route = Screen.Login.route){
         val viewModel: AuthViewModel = hiltViewModel()
@@ -176,7 +191,32 @@ fun NavGraphBuilder.authGraph(
             },
             onProductClick = { _ ->
                 navController.navigate(Screen.ProductDetail.route)
-            }
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.HandoversList.route) {
+        HandoversListScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onContinueProtocolClick = {
+                navController.navigate(Screen.HandoverProtocolGps.route)
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
+    composable(route = Screen.ListingPreview.route) {
+        ListingPreviewScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onPublishClick = {
+                navController.navigate(Screen.Home.route)
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
         )
     }
 
