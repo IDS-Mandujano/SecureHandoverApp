@@ -191,7 +191,18 @@ fun NavGraphBuilder.authGraph(
                 navController.popBackStack()
             },
             onScanIneClick = {
-                // Next step in identity flow
+                navController.navigate(Screen.IdentityStep2.route)
+            }
+        )
+    }
+
+    composable(route = Screen.IdentityStep2.route) {
+        com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep2Screen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onStartSelfieClick = {
+                // Action on selfie complete
             }
         )
     }
