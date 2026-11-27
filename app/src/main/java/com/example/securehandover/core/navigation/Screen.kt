@@ -8,4 +8,6 @@ sealed class Screen(val route: String) {
         fun createRoute(email: String) = "verify_otp/$email"
     }
     object Home : Screen("Home")
+    object ProductDetail : Screen("product_detail")
+    object IdentityStep1 : Screen("identity_step_1")
 }
