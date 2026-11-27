@@ -26,6 +26,7 @@ import com.example.securehandover.features.auth.presentation.viewmodel.AuthViewM
 import com.example.securehandover.features.handovers.presentation.screens.HandoversListScreen
 import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep1Screen
 import com.example.securehandover.features.identity.presentation.screens.IdentityVerificationStep2Screen
+import com.example.securehandover.features.listing.presentation.screens.CreateListingScreen
 import com.example.securehandover.features.listing.presentation.screens.ListingPreviewScreen
 import com.example.securehandover.features.offer.presentation.screens.MakeOfferScreen
 import com.example.securehandover.features.onboarding.presentation.screens.OnboardingScreen
@@ -62,9 +63,24 @@ fun NavGraphBuilder.authGraph(
 
     fun handleBottomNav(targetRoute: String) {
         when (targetRoute) {
-            "explorar" -> navController.navigate(Screen.Home.route)
-            "traspasos" -> navController.navigate(Screen.HandoversList.route)
-            "publicar" -> navController.navigate(Screen.ListingPreview.route)
+            "explorar" -> {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+            "traspasos" -> {
+                navController.navigate(Screen.HandoversList.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+            "publicar" -> {
+                navController.navigate(Screen.CreateListing.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
             "perfil" -> {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Home.route) { inclusive = true }
@@ -208,13 +224,35 @@ fun NavGraphBuilder.authGraph(
         )
     }
 
+    composable(route = Screen.CreateListing.route) {
+        CreateListingScreen(
+            onBackClick = {
+                navController.popBackStack()
+            },
+            onPreviewClick = {
+                navController.navigate(Screen.ListingPreview.route)
+            },
+            onSaveDraftClick = {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                }
+            },
+            onNavigateToRoute = { route -> handleBottomNav(route) }
+        )
+    }
+
     composable(route = Screen.ListingPreview.route) {
         ListingPreviewScreen(
             onBackClick = {
                 navController.popBackStack()
             },
             onPublishClick = {
-                navController.navigate(Screen.Home.route)
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                }
+            },
+            onEditClick = {
+                navController.popBackStack()
             },
             onNavigateToRoute = { route -> handleBottomNav(route) }
         )

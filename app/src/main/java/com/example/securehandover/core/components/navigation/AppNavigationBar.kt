@@ -41,9 +41,7 @@ fun AppNavigationBar(
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    if (!isSelected) {
-                        onNavigate(item.route)
-                    }
+                    onNavigate(item.route)
                 },
                 icon = {
                     Icon(
